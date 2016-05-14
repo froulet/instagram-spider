@@ -14,6 +14,7 @@ class InstagramSpider(scrapy.Spider):
 
     # Entry point for the spider
     def parse(self, response):
+        #Create the folder for the instagram account if it doesn't exist
         if not os.path.exists(self.account):
             os.makedirs(self.account)
 
@@ -23,26 +24,28 @@ class InstagramSpider(scrapy.Spider):
 
     # Method for parsing a page
     def parse_page(self, response):
+        #We get the json containing the photos's path
         js = response.selector.xpath('//script[contains(., "window._sharedData")]/text()').extract()
         js = js[0].replace("window._sharedData = ", "")
         jscleaned = js[:-1]
-        #print(jscleaned)
+
+        #Load it as a json object
         locations = json.loads(jscleaned)
-        #On vérifie la présence éventuelle d'une prochaine page
+        #We check if there is a next page
         has_next = locations['entry_data']['ProfilePage'][0]['user']['media']['page_info']['has_next_page']
-        print(has_next)
 
         media = locations['entry_data']['ProfilePage'][0]['user']['media']['nodes']
-        #print (media)
+        
+        #We parse the photos
         for photo in media:
             url = photo['display_src']
             id =  photo['id']
             self.save_image(url, id, self.account)
+            
         #If there is a next page, we crawl it
         if has_next:
             url="https://www.instagram.com/"+self.account+"/?max_id="+media[-1]['id']
             return scrapy.Request(url, callback=self.parse_page)
-
         
 
     @staticmethod

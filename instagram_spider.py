@@ -3,20 +3,29 @@ import scrapy
 import json
 import urllib
 import os
-
+import sys
 
 class InstagramSpider(scrapy.Spider):
     name = "Instagram"  # Name of the Spider, required value
 
-    def __init__(self, account=''):
-        self.start_urls = ["https://www.instagram.com/"+account]
+    def __init__(self, account='', videos=''):
+        self.videos = videos
         self.account = account
+
+        if account == '':
+            self.account = raw_input("Name of the account ?")
+        if videos == '':
+            self.videos = raw_input("Download videos ? (y/n) ")
+
+        self.start_urls = ["https://www.instagram.com/"+self.account]
+        
+         #Create the folder for the instagram account if it doesn't exist
+        if not os.path.exists(self.account):
+            os.makedirs(self.account)
 
     # Entry point for the spider
     def parse(self, response):
-        #Create the folder for the instagram account if it doesn't exist
-        if not os.path.exists(self.account):
-            os.makedirs(self.account)
+
 
         request = scrapy.Request(response.url, callback=self.parse_page)
         return request
@@ -40,12 +49,29 @@ class InstagramSpider(scrapy.Spider):
         for photo in media:
             url = photo['display_src']
             id =  photo['id']
-            self.save_image(url, id, self.account)
+            is_video =  photo['is_video']
+            #If the media is a video
+            if is_video and self.videos=='y':
+                #Get the code and download it
+                code =  photo['code']
+                yield scrapy.Request("https://www.instagram.com/p/"+code, callback=self.parse_page_video)
+            self.save_media(url, id, self.account, '.jpg')
             
         #If there is a next page, we crawl it
         if has_next:
             url="https://www.instagram.com/"+self.account+"/?max_id="+media[-1]['id']
-            return scrapy.Request(url, callback=self.parse_page)
+            yield scrapy.Request(url, callback=self.parse_page)
+
+
+    # Method for parsing a video_page
+    def parse_page_video(self, response):
+       #Get the id from the last part of the url
+       id=response.url.split("/")[-2]
+       #We get the link of the video file
+       js = response.selector.xpath('//meta[@property="og:video"]/@content').extract()
+       url = js[0]
+       #We save the video
+       self.save_media(url, id, self.account, '.mp4')
         
 
     @staticmethod
@@ -56,7 +82,8 @@ class InstagramSpider(scrapy.Spider):
     
     #We grab the photo with urllib
     @staticmethod            
-    def save_image(url, id, dir):
+    def save_media(url, id, dir, extension):
         print(url)
-        fullfilename = os.path.join(dir, id+'.jpg')
+        fullfilename = os.path.join(dir, id+extension)
         urllib.urlretrieve(url, fullfilename)
+

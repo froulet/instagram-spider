@@ -1,3 +1,6 @@
+##Requirements :
+Scrapy
+
 To use this spider,
 make sure that you have Python and Scrapy installed,
 that use the following command :

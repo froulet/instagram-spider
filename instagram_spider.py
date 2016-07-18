@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import scrapy
 import json
-import urllib
+import urllib.request
 import os
 import sys
 
@@ -18,7 +18,7 @@ class InstagramSpider(scrapy.Spider):
             self.videos = raw_input("Download videos ? (y/n) ")
 
         self.start_urls = ["https://www.instagram.com/"+self.account]
-        
+
          #Create the folder for the instagram account if it doesn't exist
         if not os.path.exists(self.account):
             os.makedirs(self.account)
@@ -43,7 +43,7 @@ class InstagramSpider(scrapy.Spider):
         has_next = locations['entry_data']['ProfilePage'][0]['user']['media']['page_info']['has_next_page']
 
         media = locations['entry_data']['ProfilePage'][0]['user']['media']['nodes']
-        
+
         #We parse the photos
         for photo in media:
             url = photo['display_src']
@@ -54,11 +54,11 @@ class InstagramSpider(scrapy.Spider):
                 #Get the code and download it
                 code =  photo['code']
                 yield scrapy.Request("https://www.instagram.com/p/"+code, callback=self.parse_page_video)
-               
-            yield scrapy.Request(url, 
+
+            yield scrapy.Request(url,
                     meta={'id': id, 'extension' :'.jpg'},
                     callback=self.save_media)
-            
+
         #If there is a next page, we crawl it
         if has_next:
             url="https://www.instagram.com/"+self.account+"/?max_id="+media[-1]['id']
@@ -73,20 +73,19 @@ class InstagramSpider(scrapy.Spider):
        js = response.selector.xpath('//meta[@property="og:video"]/@content').extract()
        url = js[0]
        #We save the video
-       yield scrapy.Request(url, 
+       yield scrapy.Request(url,
                     meta={'id': id, 'extension' :'.mp4'},
                     callback=self.save_media)
-        
+
 
     @staticmethod
     def pwrite(text):
-        with open('comments.txt', 'a') as f:        
+        with open('comments.txt', 'a') as f:
                 f.write(str(text))
 
-    
-    #We grab the photo with urllib          
+
+    #We grab the photo with urllib
     def save_media(self, response):
         print(response.url)
         fullfilename = os.path.join(self.account, response.meta['id']+response.meta['extension'])
-        urllib.urlretrieve(response.url, fullfilename)
-
+        urllib.request.urlretrieve(response.url, fullfilename)

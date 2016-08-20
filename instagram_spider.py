@@ -4,28 +4,40 @@ import json
 import urllib.request
 import os
 import sys
+import datetime
+import PIL
+from PIL import ImageFont
+from PIL import Image
+from PIL import ImageDraw
+
 
 class InstagramSpider(scrapy.Spider):
     name = "Instagram"  # Name of the Spider, required value
 
-    def __init__(self, account='', videos=''):
+    def __init__(self, account='', videos='', timestamp=''):
         self.videos = videos
         self.account = account
 
         if account == '':
-            self.account = raw_input("Name of the account ?")
+            self.account = input("Name of the account ?")
         if videos == '':
-            self.videos = raw_input("Download videos ? (y/n) ")
+            self.videos = input("Download videos ? (y/n) ")
+        if timestamp == '':
+            timestamp = input("Add timestamp ? (y/n) ")
 
         self.start_urls = ["https://www.instagram.com/"+self.account]
 
-         #Create the folder for the instagram account if it doesn't exist
-        if not os.path.exists(self.account):
-            os.makedirs(self.account)
+        self.savedir = "@"+self.account
+
+        if timestamp == 'y':
+            self.savedir = self.getCurrentTime() + self.savedir
+
+        if not os.path.exists(self.savedir):
+            os.makedirs(self.savedir)
+
 
     # Entry point for the spider
     def parse(self, response):
-
         request = scrapy.Request(response.url, callback=self.parse_page)
         return request
 
@@ -87,5 +99,9 @@ class InstagramSpider(scrapy.Spider):
     #We grab the photo with urllib
     def save_media(self, response):
         print(response.url)
-        fullfilename = os.path.join(self.account, response.meta['id']+response.meta['extension'])
+        fullfilename = os.path.join(self.savedir, response.meta['id']+response.meta['extension'])
         urllib.request.urlretrieve(response.url, fullfilename)
+
+    def getCurrentTime(self):
+        now = datetime.datetime.now()
+        return now.strftime("%Y-%m-%d_%H:%M")

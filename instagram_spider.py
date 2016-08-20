@@ -52,9 +52,10 @@ class InstagramSpider(scrapy.Spider):
         #Load it as a json object
         locations = json.loads(jscleaned)
         #We check if there is a next page
-        has_next = locations['entry_data']['ProfilePage'][0]['user']['media']['page_info']['has_next_page']
-
-        media = locations['entry_data']['ProfilePage'][0]['user']['media']['nodes']
+        user = locations['entry_data']['ProfilePage'][0]['user']
+        
+        has_next = user['media']['page_info']['has_next_page']
+        media = user['media']['nodes']
 
         #We parse the photos
         for photo in media:

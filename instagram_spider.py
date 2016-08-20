@@ -89,13 +89,6 @@ class InstagramSpider(scrapy.Spider):
                     meta={'id': id, 'extension' :'.mp4'},
                     callback=self.save_media)
 
-
-    @staticmethod
-    def pwrite(text):
-        with open('comments.txt', 'a') as f:
-                f.write(str(text))
-
-
     #We grab the photo with urllib
     def save_media(self, response):
         print(response.url)

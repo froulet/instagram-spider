@@ -1,11 +1,11 @@
-#Instagram Spider
+# Instagram Spider
 Scrapy spider used for saving all the photos and videos from an instagram account without using Instagram API.
 
-##Requirements :
+## Requirements :
 - Python 3
 - Scrapy
 
-##Usage
+## Usage
 To use this spider,
 make sure that you have Python and Scrapy installed,
 then use the following command :

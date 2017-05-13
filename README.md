@@ -19,3 +19,6 @@ If you don't precise those parameters, they will be asked when you launched the 
 
 All the photos and videos will be saved in folder with the name of the account.
 The timestamp parameter allow you to automatically add the date at beginning of the folder's name.
+
+### Options
+You can use the --nolog option to avoid all the printed scrapy logs.

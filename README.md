@@ -22,3 +22,10 @@ The timestamp parameter allow you to automatically add the date at beginning of 
 
 ### Options
 You can use the --nolog option to avoid all the printed scrapy logs.
+
+#### Notes
+If you have trouble calling scrapy after installing it with pip3, try to call replace the scrapy command by :
+
+```python
+python -m scrapy.cmdline
+```

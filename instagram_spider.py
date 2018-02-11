@@ -53,28 +53,37 @@ class InstagramSpider(scrapy.Spider):
         locations = json.loads(jscleaned)
         #We check if there is a next page
         user = locations['entry_data']['ProfilePage'][0]['user']
-        
+        is_private = user['is_private']
+
+        if is_private == True:
+            print("!!!!! Error !!!! : Looks like private account");
+            return
+
         has_next = user['media']['page_info']['has_next_page']
-        media = user['media']['nodes']
+        medias = user['media']['nodes']
 
         #We parse the photos
-        for photo in media:
-            url = photo['display_src']
-            id =  photo['id']
-            is_video =  photo['is_video']
-            #If the media is a video
-            if is_video and self.videos=='y':
-                #Get the code and download it
-                code =  photo['code']
-                yield scrapy.Request("https://www.instagram.com/p/"+code, callback=self.parse_page_video)
+        for media in medias:
+            url = media['display_src']
+            id =  media['id']
+            type =  media['__typename']
+            code =  media['code']
 
-            yield scrapy.Request(url,
+            if type == "GraphSidecar":
+                yield scrapy.Request("https://www.instagram.com/p/" + code, callback=self.parse_sideCar)
+
+            elif type == "GraphImage":
+                yield scrapy.Request(url,
                     meta={'id': id, 'extension' :'.jpg'},
                     callback=self.save_media)
+                
+            elif type == "GraphVideo" and self.videos=='y':
+                yield scrapy.Request("https://www.instagram.com/p/" + code, callback=self.parse_page_video)
+
 
         #If there is a next page, we crawl it
         if has_next:
-            url="https://www.instagram.com/"+self.account+"/?max_id="+media[-1]['id']
+            url="https://www.instagram.com/"+self.account+"/?max_id=" + medias[-1]['id']
             yield scrapy.Request(url, callback=self.parse_page)
 
 
@@ -90,9 +99,28 @@ class InstagramSpider(scrapy.Spider):
                     meta={'id': id, 'extension' :'.mp4'},
                     callback=self.save_media)
 
-    #We grab the photo with urllib
+    # Method for parsing a video_page
+    def parse_sideCar(self, response):
+        #We get the json containing the photos's path
+        js = response.selector.xpath('//script[contains(., "window._sharedData")]/text()').extract()
+        js = js[0].replace("window._sharedData = ", "")
+        jscleaned = js[:-1]
+
+        json_data = json.loads(jscleaned)
+        json_data = json_data["entry_data"]["PostPage"][0]
+
+        edges = json_data["graphql"]["shortcode_media"]["edge_sidecar_to_children"]["edges"]
+
+        for edge in edges:
+            url = edge["node"]["display_url"];
+            id =  edge["node"]['id'];
+            yield scrapy.Request(url,
+                    meta={'id': id, 'extension' :'.jpg'},
+                    callback=self.save_media)
+
+    #We grab the media with urllib
     def save_media(self, response):
-        print(response.url)
+        print("Downloading : " + response.url)
         fullfilename = os.path.join(self.savedir, response.meta['id']+response.meta['extension'])
         urllib.request.urlretrieve(response.url, fullfilename)
 

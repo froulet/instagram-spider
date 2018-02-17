@@ -56,7 +56,7 @@ class InstagramSpider(scrapy.Spider):
         is_private = user['is_private']
 
         if is_private == True:
-            print("!!!!! Error !!!! : Looks like private account");
+            print("!!!!! Error !!!! : Looks like a private account");
             return
 
         has_next = user['media']['page_info']['has_next_page']
